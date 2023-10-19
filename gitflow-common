@@ -43,8 +43,15 @@
 
 # Shell output
 warn() { echo "$@" >&2; }
-die() { warn "Fatal: $@"; exit 1; }
-die_help() { warn $@; flags_help; exit 1; }
+die() {
+	warn "Fatal: $@"
+	exit 1
+}
+die_help() {
+	warn $@
+	flags_help
+	exit 1
+}
 
 escape() {
 	echo "$1" | sed 's/\([\.\$\*]\)/\\\1/g'
@@ -59,12 +66,12 @@ contains() {
 	local return
 
 	case $1 in
-		*$2*)
-			return=$FLAGS_TRUE
-			;;
-		*)
-			return=$FLAGS_FALSE
-			;;
+	*$2*)
+		return=$FLAGS_TRUE
+		;;
+	*)
+		return=$FLAGS_FALSE
+		;;
 	esac
 	return $return
 }
@@ -78,8 +85,16 @@ startswith() { [ "$1" != "${1#$2}" ]; }
 endswith() { [ "$1" != "${1%$2}" ]; }
 
 # Convenience functions for checking shFlags flags
-flag() { local FLAG; eval FLAG='$FLAGS_'$1; [ $FLAG -eq $FLAGS_TRUE ]; }
-noflag() { local FLAG; eval FLAG='$FLAGS_'$1; [ $FLAG -ne $FLAGS_TRUE ]; }
+flag() {
+	local FLAG
+	eval FLAG='$FLAGS_'$1
+	[ $FLAG -eq $FLAGS_TRUE ]
+}
+noflag() {
+	local FLAG
+	eval FLAG='$FLAGS_'$1
+	[ $FLAG -ne $FLAGS_TRUE ]
+}
 
 # check_boolean
 # Check if given value can be interpreted as a boolean
@@ -123,7 +138,7 @@ git_all_tags() { git for-each-ref --format='%(refname:short)' refs/tags; }
 
 git_local_branches_prefixed() {
 	[ -z $1 ] && die "Prefix parameter missing." # This should never happen.
-	git for-each-ref --format='%(refname:short)' refs/heads/$1\* ;
+	git for-each-ref --format='%(refname:short)' refs/heads/$1\*
 }
 
 git_current_branch() {
@@ -291,10 +306,10 @@ gitflow_has_develop_configured() {
 }
 
 gitflow_is_initialized() {
-	gitflow_has_master_configured                    && \
-	gitflow_has_develop_configured                   && \
-	[ "$(git config --get gitflow.branch.master)" != "$(git config --get gitflow.branch.develop)" ] && \
-	git config --get-regexp gitflow.prefix >/dev/null 2>&1
+	gitflow_has_master_configured &&
+		gitflow_has_develop_configured &&
+		[ "$(git config --get gitflow.branch.master)" != "$(git config --get gitflow.branch.develop)" ] &&
+		git config --get-regexp gitflow.prefix >/dev/null 2>&1
 }
 
 # Loading settings that can be overridden using git config
@@ -310,12 +325,12 @@ gitflow_load_settings() {
 	GITFLOW_CONFIG="$DOT_GIT_DIR/gitflow_config"
 	if [ -f "$GITFLOW_CONFIG" ]; then # move all settings from old .git/gitflow_config to the local conf.
 		warn "Migrating old \"$GITFLOW_CONFIG\" to the \"--local\" repo config."
-		_config_lines=`git config --list --file="$GITFLOW_CONFIG"`;
+		_config_lines=$(git config --list --file="$GITFLOW_CONFIG")
 		for _config_line in ${_config_lines}; do
 			_key=${_config_line%=*}
 			_value=${_config_line#=*}
 			git_do config --local gitflow.${_key} ${_value}
-		done;
+		done
 		mv "$GITFLOW_CONFIG" "$GITFLOW_CONFIG".backup 2>/dev/null
 	fi
 }
@@ -379,10 +394,10 @@ gitflow_is_prefixed_branch() {
 	branch=$1
 	case $branch in
 	$(git config --get gitflow.prefix.feature)* | \
-	$(git config --get gitflow.prefix.bugfix)* | \
-	$(git config --get gitflow.prefix.release)* | \
-	$(git config --get gitflow.prefix.hotfix)*  | \
-	$(git config --get gitflow.prefix.support)* )
+		$(git config --get gitflow.prefix.bugfix)* | \
+		$(git config --get gitflow.prefix.release)* | \
+		$(git config --get gitflow.prefix.hotfix)* | \
+		$(git config --get gitflow.prefix.support)*)
 		return=0
 		;;
 	*)
@@ -564,7 +579,6 @@ gitflow_expand_versionprefix_arg() {
 	esac
 }
 
-
 gitflow_require_base_arg() {
 	if [ "$BASE" = "" ]; then
 		die_help "Missing argument <base>"
@@ -609,15 +623,17 @@ gitflow_rename_branch() {
 	# read arguments into global variables
 	if [ -z $1 ]; then
 		NEW_NAME=''
-	else
-		NEW_NAME=$1
-	fi
-
-	if [ -z $2 ]; then
 		NAME=''
 	else
-		NAME=$2
+		if [ -z $2 ]; then
+			NAME=''
+			NEW_NAME=$1
+		else
+			NAME=$1
+			NEW_NAME=$2
+		fi
 	fi
+
 	BRANCH=${PREFIX}${NAME}
 	NEW_BRANCH=${PREFIX}${NEW_NAME}
 
@@ -629,7 +645,6 @@ gitflow_rename_branch() {
 	if [ "$NAME" = "" ]; then
 		gitflow_use_current_branch_name
 	fi
-
 
 	# Sanity checks
 	require_branch "$BRANCH"
@@ -749,12 +764,12 @@ run_filter_hook() {
 	shift
 	scriptfile="${HOOKS_DIR}/filter-flow-${command}"
 	if [ -x "$scriptfile" ]; then
-		return=`$scriptfile "$@"`
+		return=$($scriptfile "$@")
 		if [ $? -eq 127 ]; then
 			echo "$return"
 			exit 127
 		fi
-			echo $return
+		echo $return
 	else
 		echo "$@"
 	fi
@@ -806,5 +821,5 @@ run_post_hook() {
 }
 
 flags_help() {
-	eval "$( echo "$OPTIONS_SPEC" | git rev-parse --parseopt -- "-h" || echo exit $? )"
+	eval "$(echo "$OPTIONS_SPEC" | git rev-parse --parseopt -- "-h" || echo exit $?)"
 }

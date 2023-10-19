@@ -35,7 +35,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-
 initialize() {
 	require_git_repo
 	require_gitflow_initialized
@@ -61,7 +60,7 @@ parse_args() {
 	FLAGS "$@" || exit $?
 	eval set -- "${FLAGS_ARGV}"
 
-	OPTION=$(echo $1|tr '[:upper:]' '[:lower:]')
+	OPTION=$(echo $1 | tr '[:upper:]' '[:lower:]')
 
 	if [ "$FLAGS_file" != "" ]; then
 		gitflow_config_option="--file '$FLAGS_file'"
@@ -233,16 +232,14 @@ file=     Use given config file
 		${FLAGS_ERROR})
 			die "Invalid value for option 'allowmultihotfix'. Valid values are 'true' or 'false'"
 			;;
-		*)
-			;;
+		*) ;;
 		esac
 	fi
 
 	git_do config $gitflow_config_option $cfg_option "$value"
 
 	case $? in
-	0)
-		;;
+	0) ;;
 	3)
 		die "The config file is invalid."
 		;;
@@ -271,8 +268,8 @@ file=     Use given config file
 	echo
 }
 
-cmd_base () {
-		OPTIONS_SPEC="\
+cmd_base() {
+	OPTIONS_SPEC="\
 git flow config base [<options>] <branch> [<base>]
 
 Set the given <base> for the given <branch>
@@ -304,7 +301,7 @@ cmd_help() {
 }
 
 # Private functions
-__set_base () {
+__set_base() {
 
 	require_branch "$1"
 	git_branch_exists "$2" || die_help "Given base doesn't exists or is not a branch."
@@ -312,7 +309,7 @@ __set_base () {
 	gitflow_config_set_base_branch "$2" "$1"
 }
 
-__get_base () {
+__get_base() {
 	local base
 
 	base=$(gitflow_config_get_base_branch "$1")

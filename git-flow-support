@@ -47,9 +47,10 @@ initialize() {
 }
 
 usage() {
-		OPTIONS_SPEC="\
+	OPTIONS_SPEC="\
 git flow support [list]
 git flow support start
+git flow support rebase
 
 Manage your support branches.
 
@@ -100,18 +101,18 @@ v,verbose         Verbose (more) output
 		len=${#branch}
 		width=$(max $width $len)
 	done
-	width=$(($width+3-${#PREFIX}))
+	width=$(($width + 3 - ${#PREFIX}))
 
 	for branch in $support_branches; do
-		base=$(git merge-base "$branch" "$MASTER_BRANCH")
-		master_sha=$(git rev-parse "$MASTER_BRANCH")
-		branch_sha=$(git rev-parse "$branch")
 		if [ "$branch" = "$current_branch" ]; then
 			printf "* "
 		else
 			printf "  "
 		fi
 		if flag verbose; then
+			base=$(git merge-base "$branch" "$MASTER_BRANCH")
+			master_sha=$(git rev-parse "$MASTER_BRANCH")
+			branch_sha=$(git rev-parse "$branch")
 			printf "%-${width}s" "${branch#$PREFIX}"
 			if [ "$branch_sha" = "$master_sha" ]; then
 				printf "(no commits yet)"
@@ -170,7 +171,7 @@ F,[no]fetch       Fetch from origin before performing finish
 	DEFINE_boolean 'fetch' false "fetch from $ORIGIN before performing finish" F
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "support.start.fetch"   "fetch"
+	gitflow_override_flag_boolean "support.start.fetch" "fetch"
 
 	# Parse arguments
 	parse_args "$@"
@@ -218,8 +219,8 @@ p,[no]preserve-merges  Preserve merges
 	DEFINE_boolean 'preserve-merges' false 'try to recreate merges' p
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "support.rebase.interactive"       "interactive"
-	gitflow_override_flag_boolean   "support.rebase.preserve-merges"   "preserve_merges"
+	gitflow_override_flag_boolean "support.rebase.interactive" "interactive"
+	gitflow_override_flag_boolean "support.rebase.preserve-merges" "preserve_merges"
 
 	# Parse arguments
 	parse_args "$@"
@@ -240,7 +241,7 @@ p,[no]preserve-merges  Preserve merges
 
 	git_local_branch_exists "$BASE_BRANCH" || die "The base '$BASE_BRANCH' doesn't exists locally or is not a branch. Can't rebase the support branch '$BRANCH'."
 
-	git_do checkout -q "$BRANCH"  || die "Could not check out branch '$BRANCH'."
+	git_do checkout -q "$BRANCH" || die "Could not check out branch '$BRANCH'."
 	if flag interactive; then
 		opts="$opts -i"
 	fi

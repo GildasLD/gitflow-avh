@@ -58,7 +58,7 @@ parse_args() {
 # Default entry when no SUBACTION is given
 cmd_default() {
 	OPTIONS_SPEC="\
-git flow init [-h] [-d] [-f]
+git flow init [-h] [-d] [-f] [-g]
 
 Setup a git repository for git flow usage. Can also be used to start a git repository.
 --
@@ -66,6 +66,7 @@ h,help!             Show this help
 showcommands!       Show git commands while executing them
 d,[no]defaults      Use default branch naming conventions
 f,[no]force         Force setting of gitflow branches, even if already configured
+g,[no]sign			Sign initial commit when creating a repository
 
 p,feature!          Feature branches
 b,bugfix!           Bugfix branches
@@ -89,6 +90,7 @@ file=    use given config file
 	DEFINE_boolean 'local' false 'use repository config file'
 	DEFINE_boolean 'global' false 'use global config file'
 	DEFINE_boolean 'system' false 'use system config file'
+	DEFINE_boolean 'sign' false 'sign initial commit when creating a repository' g
 	DEFINE_string 'file' "" 'use given config file'
 	DEFINE_string 'feature' "" 'feature branches' p
 	DEFINE_string 'bugfix' "" 'bugfix branches' b
@@ -98,7 +100,7 @@ file=    use given config file
 	DEFINE_string 'tag' "" 'version tag prefix' t
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "init.defaults"   "defaults"
+	gitflow_override_flag_boolean "init.defaults" "defaults"
 
 	# Parse arguments
 	parse_args "$@"
@@ -116,8 +118,8 @@ file=    use given config file
 	fi
 
 	if git_config_bool_exists "user.useconfigonly"; then
-		user_email=$(git config --get user.email)
-		user_name=$(git config --get user.name)
+		user_email=$(git config --get user.email || echo $GIT_AUTHOR_EMAIL)
+		user_name=$(git config --get user.name || echo $GIT_AUTHOR_NAME)
 		if [ -z "${user_email}" ] || [ -z "${user_name}" ]; then
 			die "Configuration useconfigonly is set but no name and/or email was set"
 		fi
@@ -174,8 +176,8 @@ file=    use given config file
 		fi
 
 		if [ -z $default_suggestion ] && flag defaults; then
-				should_check_existence=YES
-				default_suggestion=$(git config --get gitflow.branch.main || echo main)
+			should_check_existence=YES
+			default_suggestion=$(git config --get gitflow.branch.main || echo main)
 		fi
 
 		printf "Branch name for production releases: [$default_suggestion] "
@@ -198,7 +200,7 @@ file=    use given config file
 		fi
 
 		# Store the name of the master branch
-		git_do config $gitflow_config_option gitflow.branch.main "$master_branch"
+		git_do config $gitflow_config_option gitflow.branch.master "$master_branch"
 	fi
 
 	# Add a develop branch if no such branch exists yet
@@ -259,8 +261,13 @@ file=    use given config file
 	local created_gitflow_branch=0
 	if ! git rev-parse --quiet --verify HEAD >/dev/null 2>&1; then
 		git_do symbolic-ref HEAD "refs/heads/$master_branch"
-		git_do commit --allow-empty --quiet -m "Initial commit"
-		created_gitflow_branch=1
+		if flag sign; then
+			git_do commit --allow-empty --gpg-sign --quiet -m "initial commit"
+			created_gitflow_branch=1
+		else
+			git_do commit --allow-empty --quiet -m "initial commit"
+			created_gitflow_branch=1
+		fi
 	fi
 
 	# Creation of master
@@ -293,7 +300,7 @@ file=    use given config file
 	fi
 
 	# Ask the user for naming conventions (branch and tag prefixes )
-	if flag force || \
+	if flag force ||
 		! git config --get gitflow.prefix.feature >/dev/null 2>&1 ||
 		! git config --get gitflow.prefix.bugfix >/dev/null 2>&1 ||
 		! git config --get gitflow.prefix.release >/dev/null 2>&1 ||
@@ -306,11 +313,11 @@ file=    use given config file
 
 	# Feature branches
 	if ! git config --get gitflow.prefix.feature >/dev/null 2>&1 || flag force; then
-	    if [ "$FLAGS_feature" != "" ]; then
-	        default_suggestion=$(echo $FLAGS_feature)
-        else
-	    	default_suggestion=$(git config --get --system gitflow.prefix.feature || git config --get --global gitflow.prefix.feature || echo feature/)
-        fi
+		if [ "$FLAGS_feature" != "" ]; then
+			default_suggestion=$(echo $FLAGS_feature)
+		else
+			default_suggestion=$(git config --get --system gitflow.prefix.feature || git config --get --global gitflow.prefix.feature || echo feature/)
+		fi
 		printf "Feature branches? [$default_suggestion] "
 		if noflag defaults; then
 			read answer
@@ -323,11 +330,11 @@ file=    use given config file
 
 	# Bugfix branches
 	if ! git config --get gitflow.prefix.bugfix >/dev/null 2>&1 || flag force; then
-	    if [ "$FLAGS_bugfix" != "" ]; then
-	        default_suggestion=$(echo $FLAGS_bugfix)
-        else
-		    default_suggestion=$(git config --get --system gitflow.prefix.bugfix || git config --get --global gitflow.prefix.bugfix || echo bugfix/)
-        fi
+		if [ "$FLAGS_bugfix" != "" ]; then
+			default_suggestion=$(echo $FLAGS_bugfix)
+		else
+			default_suggestion=$(git config --get --system gitflow.prefix.bugfix || git config --get --global gitflow.prefix.bugfix || echo bugfix/)
+		fi
 		printf "Bugfix branches? [$default_suggestion] "
 		if noflag defaults; then
 			read answer
@@ -340,11 +347,11 @@ file=    use given config file
 
 	# Release branches
 	if ! git config --get gitflow.prefix.release >/dev/null 2>&1 || flag force; then
-	    if [ "$FLAGS_release" != "" ]; then
-	        default_suggestion=$(echo $FLAGS_release)
-        else
-		    default_suggestion=$(git config --get --system gitflow.prefix.release || git config --get --global gitflow.prefix.release || echo release/)
-        fi
+		if [ "$FLAGS_release" != "" ]; then
+			default_suggestion=$(echo $FLAGS_release)
+		else
+			default_suggestion=$(git config --get --system gitflow.prefix.release || git config --get --global gitflow.prefix.release || echo release/)
+		fi
 		printf "Release branches? [$default_suggestion] "
 		if noflag defaults; then
 			read answer
@@ -357,11 +364,11 @@ file=    use given config file
 
 	# Hotfix branches
 	if ! git config --get gitflow.prefix.hotfix >/dev/null 2>&1 || flag force; then
-	    if [ "$FLAGS_hotfix" != "" ]; then
-	        default_suggestion=$(echo $FLAGS_hotfix)
-        else
-		    default_suggestion=$(git config --get --system gitflow.prefix.hotfix || git config --get --global gitflow.prefix.hotfix || echo hotfix/)
-        fi
+		if [ "$FLAGS_hotfix" != "" ]; then
+			default_suggestion=$(echo $FLAGS_hotfix)
+		else
+			default_suggestion=$(git config --get --system gitflow.prefix.hotfix || git config --get --global gitflow.prefix.hotfix || echo hotfix/)
+		fi
 		printf "Hotfix branches? [$default_suggestion] "
 		if noflag defaults; then
 			read answer
@@ -374,11 +381,11 @@ file=    use given config file
 
 	# Support branches
 	if ! git config --get gitflow.prefix.support >/dev/null 2>&1 || flag force; then
-	    if [ "$FLAGS_support" != "" ]; then
-	        default_suggestion=$(echo $FLAGS_support)
-        else
-		    default_suggestion=$(git config --get --system gitflow.prefix.support || git config --get --global gitflow.prefix.support || echo support/)
-        fi
+		if [ "$FLAGS_support" != "" ]; then
+			default_suggestion=$(echo $FLAGS_support)
+		else
+			default_suggestion=$(git config --get --system gitflow.prefix.support || git config --get --global gitflow.prefix.support || echo support/)
+		fi
 		printf "Support branches? [$default_suggestion] "
 		if noflag defaults; then
 			read answer
@@ -391,11 +398,11 @@ file=    use given config file
 
 	# Version tag prefix
 	if ! git config --get gitflow.prefix.versiontag >/dev/null 2>&1 || flag force; then
-	    if [ "$FLAGS_tag" != "" ]; then
-		    default_suggestion=$(echo $FLAGS_tag)
-        else
-            default_suggestion=$(git config --get --system gitflow.prefix.versiontag || git config --get --global gitflow.prefix.versiontag || echo "")
-        fi
+		if [ "$FLAGS_tag" != "" ]; then
+			default_suggestion=$(echo $FLAGS_tag)
+		else
+			default_suggestion=$(git config --get --system gitflow.prefix.versiontag || git config --get --global gitflow.prefix.versiontag || echo "")
+		fi
 		printf "Version tag prefix? [$default_suggestion] "
 		if noflag defaults; then
 			read answer
@@ -419,6 +426,28 @@ file=    use given config file
 		fi
 		[ "$answer" = "-" ] && hooks_dir= || hooks_dir=${answer:-$default_suggestion}
 		git_do config $gitflow_config_option gitflow.path.hooks "$hooks_dir"
+	fi
+
+	# Automate pre-commit hook install if it exists on git-flow hooks directory
+	hooks_dir=$(git config --get gitflow.path.hooks)
+	hooks_dir=${hooks_dir%%/}
+	if [ -f "$hooks_dir/pre-commit" ]; then
+		DOT_GIT_DIR=$(git rev-parse --git-dir)
+		LOCAL_GIT_HOOKS_DIR="$DOT_GIT_DIR/hooks"
+		# Check whether there's a previous local pre-commit hook to backup
+		if [ -f "$LOCAL_GIT_HOOKS_DIR/pre-commit" ]; then
+			backup="(local hook will be saved)"
+		fi
+		default_suggestion="Y"
+		printf "Install pre-commit hook%s? [$default_suggestion] " " $backup"
+		if noflag defaults; then
+			read answer
+		else
+			printf "\n"
+		fi
+		if [ "${answer:-$default_suggestion}" = "Y" ] || [ "${answer:-$default_suggestion}" = "y" ]; then
+			ln -s "$hooks_dir/pre-commit" -t "$LOCAL_GIT_HOOKS_DIR" --backup
+		fi
 	fi
 
 	# TODO: what to do with origin?

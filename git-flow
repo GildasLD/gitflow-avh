@@ -46,9 +46,9 @@ fi
 # git-flow file is a symbolic link
 case $(uname -s) in
 Linux)
-	export GITFLOW_DIR=$(dirname "$(readlink -e "$0")")
+	export GITFLOW_DIR=$(dirname "$(readlink -f "$0")")
 	;;
-FreeBSD|OpenBSD|NetBSD)
+FreeBSD | OpenBSD | NetBSD)
 	export FLAGS_GETOPT_CMD='/usr/local/bin/getopt'
 	export GITFLOW_DIR=$(dirname "$(realpath "$0")")
 	;;
@@ -56,7 +56,7 @@ Darwin)
 	PRG="$0"
 	while [ -h "$PRG" ]; do
 		link=$(readlink "$PRG")
-		if expr "$link" : '/.*' > /dev/null; then
+		if expr "$link" : '/.*' >/dev/null; then
 			PRG="$link"
 		else
 			PRG="$(dirname "$PRG")/$link"
@@ -66,7 +66,7 @@ Darwin)
 	;;
 *MINGW*)
 	export GITFLOW_DIR=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
-	pwd () {
+	pwd() {
 		builtin pwd -W
 	}
 	;;
@@ -79,10 +79,10 @@ esac
 
 # Extra environment settings
 if [ -f ~/.gitflow_export ]; then
-	if grep -E 'GITFLOW_FLAG_(SHOWCOMMANDS|INIT|FEATURE|HOTFIX|RELEASE|SUPPORT)' ~/.gitflow_export > /dev/null; then
+	if grep -E 'GITFLOW_FLAG_(SHOWCOMMANDS|INIT|FEATURE|HOTFIX|RELEASE|SUPPORT)' ~/.gitflow_export >/dev/null; then
 		echo "Using environment variables for \"showcommands\", \"init\", \"feature\", \"hotfix\", \"release\" and \"support\" in ~/.gitflow_export has deprecated, use git config instead."
 		echo ""
-		exit 1;
+		exit 1
 	else
 		. ~/.gitflow_export
 	fi
@@ -125,7 +125,8 @@ main() {
 	gitflow_override_flag_boolean 'showcommands' 'showcommands'
 
 	# Sanity checks
-	SUBCOMMAND="$1"; shift
+	SUBCOMMAND="$1"
+	shift
 	if [ "${SUBCOMMAND}" = "finish" ] || [ "${SUBCOMMAND}" = "delete" ] || [ "${SUBCOMMAND}" = "publish" ] || [ "${SUBCOMMAND}" = "rebase" ]; then
 		_current_branch=$(git_current_branch)
 		if gitflow_is_prefixed_branch "${_current_branch}"; then
@@ -159,7 +160,7 @@ main() {
 		fi
 	fi
 
-		if [ ! -e "$GITFLOW_DIR/git-flow-$SUBCOMMAND" ]; then
+	if [ ! -e "$GITFLOW_DIR/git-flow-$SUBCOMMAND" ]; then
 		usage
 		exit 1
 	fi
@@ -186,7 +187,7 @@ main() {
 			fi
 			# Replace the dash with an underscore as bash doesn't allow a dash
 			# in the function name.
-			SUBACTION=$(echo "$SUBACTION" |tr '-' '_')
+			SUBACTION=$(echo "$SUBACTION" | tr '-' '_')
 		fi
 	fi
 

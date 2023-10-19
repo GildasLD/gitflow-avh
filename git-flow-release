@@ -67,7 +67,7 @@ _finish_from_develop() {
 				if [ $compare_refs_result -eq 1 ]; then
 					warn "Fast forwarding '"$MASTER_BRANCH"'."
 					git_do checkout "$MASTER_BRANCH" || die "Could not check out branch '$MASTER_BRANCH'."
-					git_do merge  --ff-only "$ORIGIN/$MASTER_BRANCH" >/dev/null 2>&1
+					git_do merge --ff-only "$ORIGIN/$MASTER_BRANCH" >/dev/null 2>&1
 					merge_result=$?
 					git_do checkout "$BRANCH"
 					if [ $merge_result -gt 0 ]; then
@@ -92,7 +92,7 @@ _finish_from_develop() {
 		# We ask for a tag, be sure it does not exists or
 		# points to the latest hotfix commit
 		if git_tag_exists "$VERSION_PREFIX$TAGNAME"; then
-			git_compare_refs  "$BRANCH" "$VERSION_PREFIX$TAGNAME"^2 2>/dev/null
+			git_compare_refs "$BRANCH" "$VERSION_PREFIX$TAGNAME"^2 2>/dev/null
 			[ $? -eq 0 ] || die "Tag already exists and does not point to release branch '$BRANCH'"
 		fi
 	fi
@@ -103,17 +103,17 @@ _finish_from_develop() {
 	# In case a previous attempt to finish this release branch has failed,
 	# but the merge into master was successful, we skip it now
 	if ! git_is_branch_merged_into "$BRANCH" "$MASTER_BRANCH"; then
-			git_do checkout "$MASTER_BRANCH" || die "Could not check out branch '$MASTER_BRANCH'."
+		git_do checkout "$MASTER_BRANCH" || die "Could not check out branch '$MASTER_BRANCH'."
 
-			opts=""
-			noflag edit && opts="$opts --no-edit"
-			if noflag squash; then
-				git_do merge --no-ff $opts "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
-			else
-				git_do merge --squash $opts "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
-				flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$MASTER_BRANCH" "$BRANCH" > "$DOT_GIT_DIR/SQUASH_MSG"
-				git_do commit $opts
-			fi
+		opts=""
+		noflag edit && opts="$opts --no-edit"
+		if noflag squash; then
+			git_do merge --no-ff $opts "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
+		else
+			git_do merge --squash $opts "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
+			flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$MASTER_BRANCH" "$BRANCH" >"$DOT_GIT_DIR/SQUASH_MSG"
+			git_do commit $opts
+		fi
 	fi
 
 	if noflag notag; then
@@ -140,7 +140,7 @@ _finish_from_develop() {
 					opts="$opts -m $VERSION_PREFIX$TAGNAME"
 				fi
 			fi
-			eval git_do tag $opts "$VERSION_PREFIX$TAGNAME" || die "Tagging failed. Please run finish again to retry."
+			eval git_do tag "$opts" "$VERSION_PREFIX$TAGNAME" || die "Tagging failed. Please run finish again to retry."
 		fi
 	fi
 
@@ -176,7 +176,7 @@ _finish_from_develop() {
 					git_do merge --no-ff $opts "$commit" || die "There were merge conflicts." # TODO: What do we do now?
 				else
 					git_do merge --squash $opts "$commit" || die "There were merge conflicts." # TODO: What do we do now?
-					flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$DEVELOP_BRANCH" "$BRANCH" > "$DOT_GIT_DIR/SQUASH_MSG"
+					flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$DEVELOP_BRANCH" "$BRANCH" >"$DOT_GIT_DIR/SQUASH_MSG"
 					git_do commit $opts
 				fi
 			fi
@@ -205,7 +205,7 @@ _finish_from_develop() {
 		fi
 
 		# Always delete remote first
-		if noflag keepremote;then
+		if noflag keepremote; then
 			if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
 				git_remote_branch_delete "$BRANCH" && remotebranchdeleted=$FLAGS_TRUE
 			fi
@@ -297,7 +297,7 @@ _finish_base() {
 		# We ask for a tag, be sure it does not exists or
 		# points to the latest hotfix commit
 		if git_tag_exists "$VERSION_PREFIX$TAGNAME"; then
-			git_compare_refs  "$BRANCH" "$VERSION_PREFIX$TAGNAME"^2 2>/dev/null
+			git_compare_refs "$BRANCH" "$VERSION_PREFIX$TAGNAME"^2 2>/dev/null
 			[ $? -eq 0 ] || die "Tag already exists and does not point to release branch '$BRANCH'"
 		fi
 	fi
@@ -313,7 +313,7 @@ _finish_base() {
 			git_do merge --no-ff "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
 		else
 			git_do merge --squash "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
-			flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$BASE_BRANCH" "$BRANCH" > "$DOT_GIT_DIR/SQUASH_MSG"
+			flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$BASE_BRANCH" "$BRANCH" >"$DOT_GIT_DIR/SQUASH_MSG"
 			git_do commit
 		fi
 	fi
@@ -342,7 +342,7 @@ _finish_base() {
 					opts="$opts -m $VERSION_PREFIX$TAGNAME"
 				fi
 			fi
-			eval git_do tag $opts "$VERSION_PREFIX$TAGNAME" || die "Tagging failed. Please run finish again to retry."
+			eval git_do tag "$opts" "$VERSION_PREFIX$TAGNAME" || die "Tagging failed. Please run finish again to retry."
 		fi
 	fi
 
@@ -352,7 +352,7 @@ _finish_base() {
 	if noflag keep; then
 
 		# Always delete remote first
-		if noflag keepremote;then
+		if noflag keepremote; then
 			if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
 				git_remote_branch_delete "$BRANCH" && remotebranchdeleted=$FLAGS_TRUE
 			fi
@@ -430,13 +430,16 @@ initialize() {
 }
 
 usage() {
-		OPTIONS_SPEC="\
+	OPTIONS_SPEC="\
 git flow release [list]
 git flow release start
 git flow release finish
+git flow release branch
 git flow release publish
 git flow release track
+git flow release rebase
 git flow release delete
+git flow release create
 
 Manage your release branches.
 
@@ -451,7 +454,7 @@ cmd_default() {
 }
 
 cmd_list() {
-		OPTIONS_SPEC="\
+	OPTIONS_SPEC="\
 git flow release [list] [-h] [-v]
 
 List existing release branches
@@ -491,18 +494,18 @@ v,verbose!        verbose (more) output
 		len=${#branch}
 		width=$(max $width $len)
 	done
-	width=$(($width+3-${#PREFIX}))
+	width=$(($width + 3 - ${#PREFIX}))
 
 	for branch in $release_branches; do
-		base=$(git merge-base "$branch" "$DEVELOP_BRANCH")
-		develop_sha=$(git rev-parse "$DEVELOP_BRANCH")
-		branch_sha=$(git rev-parse "$branch")
 		if [ "$branch" = "$current_branch" ]; then
 			printf "* "
 		else
 			printf "  "
 		fi
 		if flag verbose; then
+			base=$(git merge-base "$branch" "$DEVELOP_BRANCH")
+			develop_sha=$(git rev-parse "$DEVELOP_BRANCH")
+			branch_sha=$(git rev-parse "$branch")
 			printf "%-${width}s" "${branch#$PREFIX}"
 			if [ "$branch_sha" = "$develop_sha" ]; then
 				printf "(no commits yet)"
@@ -546,6 +549,192 @@ require_no_existing_release_branches() {
 	[ -z "$release_branches" ] || die "There is an existing release branch '$first_branch'. Finish that one first."
 }
 
+cmd_create() {
+	OPTIONS_SPEC="\
+git flow release create [options] <version> [<base>]
+
+Create a new release branch
+--
+h,help              Show this help
+showcommands!       Show git commands while executing them
+F,[no]fetch         Fetch from origin before performing finish
+s,sign!             Sign the release tag cryptographically
+u,signingkey!       Use the given GPG-key for the digital signature (implies -s)
+m,message!          Use the given tag message
+f,[no]messagefile=  Use the contents of the given file as a tag message
+p,[no]push          Push to origin after performing finish
+[no]pushproduction  Push the production branch
+[no]pushdevelop     Push the develop branch
+[no]pushtag         Push the tag
+k,[no]keep          Keep branch after performing finish
+[no]keepremote      Keep the remote branch
+[no]keeplocal       Keep the local branch
+D,[no]force_delete  Force delete release branch after finish
+n,[no]tag           Don't tag this release
+b,[no]nobackmerge   Don't back-merge master, or tag if applicable, in develop
+S,[no]squash        Squash release during merge
+[no]ff-master       Fast forward master branch if possible
+e,[no]edit          The --noedit option can be used to accept the auto-generated message on merging
+T,tagname!          Use given tag name
+nodevelopmerge!  Don't back-merge develop branch
+"
+
+	local base
+
+	# Define flags
+	DEFINE_boolean 'fetch' false "fetch from $ORIGIN before performing finish" F
+	DEFINE_boolean 'sign' false "sign the release tag cryptographically" s
+	DEFINE_string 'signingkey' "" "use the given GPG-key for the digital signature (implies -s)" u
+	DEFINE_string 'message' "" "use the given tag message" m
+	DEFINE_string 'messagefile' "" "use the contents of the given file as a tag message" f
+	DEFINE_boolean 'push' false "push to $ORIGIN after performing finish" p
+	DEFINE_boolean 'pushproduction' false "push the production branch"
+	DEFINE_boolean 'pushdevelop' false "push the develop branch"
+	DEFINE_boolean 'pushtag' false "push the tag"
+	DEFINE_boolean 'keep' false "keep branch after performing finish" k
+	DEFINE_boolean 'keepremote' false "keep the remote branch"
+	DEFINE_boolean 'keeplocal' false "keep the local branch"
+	DEFINE_boolean 'force_delete' false "force delete release branch after finish" D
+	DEFINE_boolean 'notag' false "don't tag this release" n
+	DEFINE_boolean 'nobackmerge' false "don't back-merge $MASTER_BRANCH, or tag if applicable, in $DEVELOP_BRANCH " b
+	DEFINE_boolean 'squash' false "squash release during merge" S
+	DEFINE_boolean 'squash-info' false "add branch info during squash"
+	DEFINE_boolean 'ff-master' false "fast forward master branch if possible"
+	DEFINE_boolean 'edit' true "accept the auto-generated message on merging" e
+	DEFINE_string 'tagname' "" "use the given tag name" T
+	DEFINE_boolean 'nodevelopmerge' false "don't merge $BRANCH into $DEVELOP_BRANCH "
+
+	# Override defaults with values from config
+	gitflow_override_flag_boolean "release.finish.fetch" "fetch"
+	gitflow_override_flag_boolean "release.finish.sign" "sign"
+	gitflow_override_flag_boolean "release.finish.push" "push"
+	gitflow_override_flag_boolean "release.finish.pushproduction" "pushproduction"
+	gitflow_override_flag_boolean "release.finish.pushdevelop" "pushdevelop"
+	gitflow_override_flag_boolean "release.finish.pushtag" "pushtag"
+	gitflow_override_flag_boolean "release.finish.keep" "keep"
+	gitflow_override_flag_boolean "release.finish.keepremote" "keepremote"
+	gitflow_override_flag_boolean "release.finish.keeplocal" "keeplocal"
+	gitflow_override_flag_boolean "release.finish.force-delete" "force_delete"
+	gitflow_override_flag_boolean "release.finish.notag" "notag"
+	gitflow_override_flag_boolean "release.finish.nobackmerge" "nobackmerge"
+	gitflow_override_flag_boolean "release.finish.squash" "squash"
+	gitflow_override_flag_boolean "release.finish.squash-info" "squash_info"
+	gitflow_override_flag_boolean "release.finish.ff-master" "ff-master"
+	gitflow_override_flag_string "release.finish.signingkey" "signingkey"
+	gitflow_override_flag_string "release.finish.message" "message"
+	gitflow_override_flag_string "release.finish.messagefile" "messagefile"
+	gitflow_override_flag_boolean "release.finish.nodevelopmerge" "nodevelopmerge"
+
+	parse_args "$@"
+	eval set -- "${FLAGS_ARGV}"
+
+	base=${2:-$DEVELOP_BRANCH}
+
+	# Fool git flow into thinking we have a create command this allows for consistency with hook naming
+	# NOTE: this may cause a issue if we ever decide to add an actual create command to git flow
+	SUBCOMMAND="create"
+	SUBACTION="start"
+
+	# Run filter on the version
+	VERSION=$(run_filter_hook create-start-version $VERSION)
+	if [ $? -eq 127 ]; then
+		die $VERSION
+	fi
+
+	# As VERSION might have changed reset BRANCH with new VERSION
+	BRANCH=$PREFIX$VERSION
+
+	require_base_is_local_branch "$base"
+	gitflow_require_version_arg
+
+	require_no_existing_release_branches
+
+	# Sanity checks
+	git_config_bool_exists "gitflow.allowdirty" || require_clean_working_tree
+	require_branch_absent "$BRANCH"
+	require_tag_absent "$VERSION_PREFIX$VERSION"
+	if flag fetch; then
+		git_fetch_branch "$ORIGIN" "$base"
+	fi
+	if git_remote_branch_exists "$ORIGIN/$base"; then
+		require_branches_equal "$base" "$ORIGIN/$base"
+	fi
+
+	run_pre_hook "$VERSION_PREFIX$VERSION" "$ORIGIN" "$BRANCH" "$base"
+
+	gitflow_config_set_base_branch $base $BRANCH
+
+	# Create branch
+	git_do checkout -b "$BRANCH" "$base" || die "Could not create release branch '$BRANCH'."
+
+	run_post_hook "$VERSION_PREFIX$VERSION" "$ORIGIN" "$BRANCH" "$base"
+
+	echo
+	echo "Summary of actions:"
+	echo "- A new branch '$BRANCH' was created, based on '$base'"
+	echo "- You are now on branch '$(git_current_branch)'"
+	echo
+	# Run filter on the version
+	VERSION=$(run_filter_hook create-finish-version $VERSION)
+	if [ $? -eq 127 ]; then
+		die $VERSION
+	fi
+
+	# Use branch name if no tag name is given
+	if [ "$FLAGS_tagname" != "" ]; then
+		TAGNAME=$FLAGS_tagname
+	else
+		TAGNAME=$VERSION
+	fi
+
+	# As VERSION might have changed reset BRANCH with new VERSION
+	BRANCH=$PREFIX$VERSION
+
+	BASE_BRANCH=$(gitflow_config_get_base_branch $BRANCH)
+	BASE_BRANCH=${BASE_BRANCH:-$DEVELOP_BRANCH}
+	git_local_branch_exists "$BASE_BRANCH" || die "The base '$BASE_BRANCH' doesn't exists locally or is not a branch. Can't finish the release branch '$BRANCH'."
+
+	# Handle flags that imply other flags
+	if [ "$FLAGS_signingkey" != "" ]; then
+		FLAGS_sign=$FLAGS_TRUE
+	fi
+
+	# Keeping both branches implies the --keep flag to be true.
+	if flag keepremote && flag keeplocal; then
+		FLAGS_keep=$FLAGS_TRUE
+	fi
+
+	# Pushing implies we push all.
+	if flag push; then
+		FLAGS_pushproduction=$FLAGS_TRUE
+		FLAGS_pushdevelop=$FLAGS_TRUE
+		FLAGS_pushtag=$FLAGS_TRUE
+	fi
+	# If we push either of these it means we need to do a push
+	if flag pushproduction || flag pushdevelop || flag pushtag; then
+		FLAGS_push=$FLAGS_TRUE
+	fi
+
+	# Sanity checks
+	require_branch "$BRANCH"
+	require_clean_working_tree
+
+	# We always fetch the Branch from Origin
+	# This is done to avoid possible commits on the remote that are not
+	# merged into the local branch
+	if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
+		git_fetch_branch "$ORIGIN" "$BRANCH"
+	fi
+
+	if [ "$BASE_BRANCH" = "$DEVELOP_BRANCH" ]; then
+		SUBACTION="finish"
+		_finish_from_develop
+	else
+		SUBACTION="finish"
+		_finish_base
+	fi
+}
+
 cmd_start() {
 	OPTIONS_SPEC="\
 git flow release start [options] <version> [<base>]
@@ -555,7 +744,6 @@ Start a new release branch
 h,help!              Show this help
 showcommands!        Show git commands while executing them
 F,[no]fetch          Fetch from $ORIGIN before performing finish
-v,verbose!           Verbose (more) output
 "
 	local base
 
@@ -563,7 +751,7 @@ v,verbose!           Verbose (more) output
 	DEFINE_boolean 'fetch' false "fetch from $ORIGIN before performing finish" F
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "release.start.fetch"   "fetch"
+	gitflow_override_flag_boolean "release.start.fetch" "fetch"
 
 	# Parse arguments
 	parse_args "$@"
@@ -651,9 +839,9 @@ nodevelopmerge!  Don't back-merge develop branch
 	# Define flags
 	DEFINE_boolean 'fetch' false "fetch from $ORIGIN before performing finish" F
 	DEFINE_boolean 'sign' false "sign the release tag cryptographically" s
-	DEFINE_string  'signingkey' "" "use the given GPG-key for the digital signature (implies -s)" u
-	DEFINE_string  'message' "" "use the given tag message" m
-	DEFINE_string  'messagefile' "" "use the contents of the given file as a tag message" f
+	DEFINE_string 'signingkey' "" "use the given GPG-key for the digital signature (implies -s)" u
+	DEFINE_string 'message' "" "use the given tag message" m
+	DEFINE_string 'messagefile' "" "use the contents of the given file as a tag message" f
 	DEFINE_boolean 'push' false "push to $ORIGIN after performing finish" p
 	DEFINE_boolean 'pushproduction' false "push the production branch"
 	DEFINE_boolean 'pushdevelop' false "push the develop branch"
@@ -668,29 +856,29 @@ nodevelopmerge!  Don't back-merge develop branch
 	DEFINE_boolean 'squash-info' false "add branch info during squash"
 	DEFINE_boolean 'ff-master' false "fast forward master branch if possible"
 	DEFINE_boolean 'edit' true "accept the auto-generated message on merging" e
-	DEFINE_string  'tagname' "" "use the given tag name" T
+	DEFINE_string 'tagname' "" "use the given tag name" T
 	DEFINE_boolean 'nodevelopmerge' false "don't merge $BRANCH into $DEVELOP_BRANCH "
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "release.finish.fetch"          "fetch"
-	gitflow_override_flag_boolean   "release.finish.sign"           "sign"
-	gitflow_override_flag_boolean   "release.finish.push"           "push"
-	gitflow_override_flag_boolean   "release.finish.pushproduction" "pushproduction"
-	gitflow_override_flag_boolean   "release.finish.pushdevelop"    "pushdevelop"
-	gitflow_override_flag_boolean   "release.finish.pushtag"        "pushtag"
-	gitflow_override_flag_boolean   "release.finish.keep"           "keep"
-	gitflow_override_flag_boolean   "release.finish.keepremote"     "keepremote"
-	gitflow_override_flag_boolean   "release.finish.keeplocal"      "keeplocal"
-	gitflow_override_flag_boolean   "release.finish.force-delete"   "force_delete"
-	gitflow_override_flag_boolean   "release.finish.notag"          "notag"
-	gitflow_override_flag_boolean   "release.finish.nobackmerge"    "nobackmerge"
-	gitflow_override_flag_boolean   "release.finish.squash"         "squash"
-	gitflow_override_flag_boolean   "release.finish.squash-info"    "squash_info"
-	gitflow_override_flag_boolean   "release.finish.ff-master"      "ff-master"
-	gitflow_override_flag_string    "release.finish.signingkey"     "signingkey"
-	gitflow_override_flag_string    "release.finish.message"        "message"
-	gitflow_override_flag_string    "release.finish.messagefile"    "messagefile"
-	gitflow_override_flag_boolean   "release.finish.nodevelopmerge" "nodevelopmerge"
+	gitflow_override_flag_boolean "release.finish.fetch" "fetch"
+	gitflow_override_flag_boolean "release.finish.sign" "sign"
+	gitflow_override_flag_boolean "release.finish.push" "push"
+	gitflow_override_flag_boolean "release.finish.pushproduction" "pushproduction"
+	gitflow_override_flag_boolean "release.finish.pushdevelop" "pushdevelop"
+	gitflow_override_flag_boolean "release.finish.pushtag" "pushtag"
+	gitflow_override_flag_boolean "release.finish.keep" "keep"
+	gitflow_override_flag_boolean "release.finish.keepremote" "keepremote"
+	gitflow_override_flag_boolean "release.finish.keeplocal" "keeplocal"
+	gitflow_override_flag_boolean "release.finish.force-delete" "force_delete"
+	gitflow_override_flag_boolean "release.finish.notag" "notag"
+	gitflow_override_flag_boolean "release.finish.nobackmerge" "nobackmerge"
+	gitflow_override_flag_boolean "release.finish.squash" "squash"
+	gitflow_override_flag_boolean "release.finish.squash-info" "squash_info"
+	gitflow_override_flag_boolean "release.finish.ff-master" "ff-master"
+	gitflow_override_flag_string "release.finish.signingkey" "signingkey"
+	gitflow_override_flag_string "release.finish.message" "message"
+	gitflow_override_flag_string "release.finish.messagefile" "messagefile"
+	gitflow_override_flag_boolean "release.finish.nodevelopmerge" "nodevelopmerge"
 
 	# Parse arguments
 	parse_args "$@"
@@ -699,7 +887,6 @@ nodevelopmerge!  Don't back-merge develop branch
 	if [ "$VERSION" = "" ]; then
 		gitflow_use_current_branch_version
 	fi
-
 
 	# Run filter on the version
 	VERSION=$(run_filter_hook release-finish-version $VERSION)
@@ -750,7 +937,7 @@ nodevelopmerge!  Don't back-merge develop branch
 	# This is done to avoid possible commits on the remote that are not
 	# merged into the local branch
 	if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
-			git_fetch_branch "$ORIGIN" "$BRANCH"
+		git_fetch_branch "$ORIGIN" "$BRANCH"
 	fi
 
 	if [ "$BASE_BRANCH" = "$DEVELOP_BRANCH" ]; then
@@ -792,15 +979,15 @@ S,[no]squash 		Squash release during merge
 	DEFINE_boolean 'squash-info' false "add branch info during squash"
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "release.branch.fetch"         "fetch"
-	gitflow_override_flag_boolean   "release.branch.sign"          "sign"
-	gitflow_override_flag_boolean   "release.branch.push"          "push"
-	gitflow_override_flag_boolean   "release.branch.notag"         "notag"
-	gitflow_override_flag_boolean   "release.branch.squash"        "squash"
-	gitflow_override_flag_boolean   "release.branch.squash-info"   "squash_info"
-	gitflow_override_flag_string    "release.branch.signingkey"    "signingkey"
-	gitflow_override_flag_string    "release.branch.message"       "message"
-	gitflow_override_flag_string    "release.branch.messagefile"   "messagefile"
+	gitflow_override_flag_boolean "release.branch.fetch" "fetch"
+	gitflow_override_flag_boolean "release.branch.sign" "sign"
+	gitflow_override_flag_boolean "release.branch.push" "push"
+	gitflow_override_flag_boolean "release.branch.notag" "notag"
+	gitflow_override_flag_boolean "release.branch.squash" "squash"
+	gitflow_override_flag_boolean "release.branch.squash-info" "squash_info"
+	gitflow_override_flag_string "release.branch.signingkey" "signingkey"
+	gitflow_override_flag_string "release.branch.message" "message"
+	gitflow_override_flag_string "release.branch.messagefile" "messagefile"
 
 	# Parse arguments
 	FLAGS "$@" || exit $?
@@ -839,7 +1026,7 @@ S,[no]squash 		Squash release during merge
 	# This is done to avoid possible commits on the remote that are not
 	# merged into the local branch
 	if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
-			git_fetch_branch "$ORIGIN" "$BRANCH"
+		git_fetch_branch "$ORIGIN" "$BRANCH"
 	fi
 
 	# Update local branches with remote branches
@@ -861,14 +1048,14 @@ S,[no]squash 		Squash release during merge
 	# In case a previous attempt to finish this release branch has failed,
 	# but the merge into master was successful, we skip it now
 	if ! git_is_branch_merged_into "$BRANCH" "$MASTER_BRANCH"; then
-			git_do checkout "$MASTER_BRANCH" || die "Could not check out branch '$MASTER_BRANCH'."
-			if noflag squash; then
-				git_do merge --no-ff "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
-			else
-				git_do merge --squash "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
-				flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$MASTER_BRANCH" "$BRANCH" > "$DOT_GIT_DIR/SQUASH_MSG"
-				git_do commit
-			fi
+		git_do checkout "$MASTER_BRANCH" || die "Could not check out branch '$MASTER_BRANCH'."
+		if noflag squash; then
+			git_do merge --no-ff "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
+		else
+			git_do merge --squash "$BRANCH" || die "There were merge conflicts." # TODO: What do we do now?
+			flag squash_info && gitflow_create_squash_message "Merged release branch '$BRANCH'" "$MASTER_BRANCH" "$BRANCH" >"$DOT_GIT_DIR/SQUASH_MSG"
+			git_do commit
+		fi
 	fi
 
 	if noflag notag; then
@@ -888,7 +1075,7 @@ S,[no]squash 		Squash release during merge
 				opts="$opts -m '$FLAGS_message'"
 			fi
 			[ "$FLAGS_messagefile" != "" ] && opts="$opts -F '$FLAGS_messagefile'"
-			eval git_do tag $opts "$VERSION_PREFIX$VERSION" || die "Tagging failed. Please run finish again to retry."
+			eval git_do tag "$opts" "$VERSION_PREFIX$VERSION" || die "Tagging failed. Please run finish again to retry."
 		fi
 	fi
 
@@ -978,7 +1165,7 @@ showcommands!    Show git commands while executing them
 
 	run_pre_hook "$VERSION" "$ORIGIN" "$BRANCH"
 
-	git_do fetch -q "$ORIGIN"  || die "Could not fetch branch '$BRANCH' from remote '$ORIGIN'."
+	git_do fetch -q "$ORIGIN" || die "Could not fetch branch '$BRANCH' from remote '$ORIGIN'."
 	git_remote_branch_exists "$ORIGIN/$BRANCH"
 
 	# Create tracking branch
@@ -1011,8 +1198,8 @@ p,[no]preserve-merges  Preserve merges
 	DEFINE_boolean 'preserve-merges' false 'try to recreate merges' p
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "release.rebase.interactive"       "interactive"
-	gitflow_override_flag_boolean   "release.rebase.preserve-merges"   "preserve_merges"
+	gitflow_override_flag_boolean "release.rebase.interactive" "interactive"
+	gitflow_override_flag_boolean "release.rebase.preserve-merges" "preserve_merges"
 
 	# Parse arguments
 	parse_args "$@"
@@ -1033,7 +1220,7 @@ p,[no]preserve-merges  Preserve merges
 
 	git_local_branch_exists "$BASE_BRANCH" || die "The base '$BASE_BRANCH' doesn't exists locally or is not a branch. Can't rebase the release branch '$BRANCH'."
 
-	git_do checkout -q "$BRANCH"  || die "Could not check out branch '$BRANCH'."
+	git_do checkout -q "$BRANCH" || die "Could not check out branch '$BRANCH'."
 	if flag interactive; then
 		opts="$opts -i"
 	fi
@@ -1061,8 +1248,8 @@ r,[no]remote     Delete remote branch
 	DEFINE_boolean 'remote' false "delete remote branch" r
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "release.delete.fetch"    "fetch"
-	gitflow_override_flag_boolean   "release.delete.remote"   "remote"
+	gitflow_override_flag_boolean "release.delete.fetch" "fetch"
+	gitflow_override_flag_boolean "release.delete.remote" "remote"
 
 	# Parse arguments
 	parse_args "$@"
@@ -1088,7 +1275,7 @@ r,[no]remote     Delete remote branch
 		fi
 	fi
 
-	if ( git_is_branch_merged_into "$BRANCH" "$MASTER_BRANCH" && git_is_branch_merged_into "$BRANCH" "$BASE_BRANCH" ); then
+	if (git_is_branch_merged_into "$BRANCH" "$MASTER_BRANCH" && git_is_branch_merged_into "$BRANCH" "$BASE_BRANCH"); then
 		git_do branch -d "$BRANCH" || die "Could not delete the $BRANCH."
 		if flag remote; then
 			git_remote_branch_delete "$BRANCH"

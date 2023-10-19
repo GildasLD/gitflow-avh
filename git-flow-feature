@@ -57,6 +57,8 @@ git flow feature rebase
 git flow feature checkout
 git flow feature pull
 git flow feature delete
+git flow feature rename
+git flow feature release
 
 Manage your feature branches.
 
@@ -106,18 +108,18 @@ v,verbose   Verbose (more) output
 		len=${#branch}
 		width=$(max $width $len)
 	done
-	width=$(($width+3-${#PREFIX}))
+	width=$(($width + 3 - ${#PREFIX}))
 
 	for branch in $feature_branches; do
-		base=$(git merge-base "$branch" "$DEVELOP_BRANCH")
-		develop_sha=$(git rev-parse "$DEVELOP_BRANCH")
-		branch_sha=$(git rev-parse "$branch")
 		if [ "$branch" = "$current_branch" ]; then
 			printf "* "
 		else
 			printf "  "
 		fi
 		if flag verbose; then
+			base=$(git merge-base "$branch" "$DEVELOP_BRANCH")
+			develop_sha=$(git rev-parse "$DEVELOP_BRANCH")
+			branch_sha=$(git rev-parse "$branch")
 			printf "%-${width}s" "${branch#$PREFIX}"
 			if [ "$branch_sha" = "$develop_sha" ]; then
 				printf "(no commits yet)"
@@ -190,7 +192,7 @@ F,[no]fetch      Fetch from origin before performing local operation
 	DEFINE_boolean 'fetch' false 'fetch from origin before performing local operation' F
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "feature.start.fetch"   "fetch"
+	gitflow_override_flag_boolean "feature.start.fetch" "fetch"
 
 	# Parse arguments
 	parse_args "$@"
@@ -269,17 +271,17 @@ no-ff!                 Never fast-forward during the merge
 	DEFINE_boolean 'no-ff!' false "Don't fast-forward ever during merge "
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "feature.finish.fetch"             "fetch"
-	gitflow_override_flag_boolean   "feature.finish.rebase"            "rebase"
-	gitflow_override_flag_boolean   "feature.finish.preserve-merges"   "preserve_merges"
-	gitflow_override_flag_boolean   "feature.finish.push"              "push"
-	gitflow_override_flag_boolean   "feature.finish.keep"              "keep"
-	gitflow_override_flag_boolean   "feature.finish.keepremote"        "keepremote"
-	gitflow_override_flag_boolean   "feature.finish.keeplocal"         "keeplocal"
-	gitflow_override_flag_boolean   "feature.finish.force-delete"      "force_delete"
-	gitflow_override_flag_boolean   "feature.finish.squash"            "squash"
-	gitflow_override_flag_boolean   "feature.finish.squash-info"       "squash_info"
-	gitflow_override_flag_boolean   "feature.finish.no-ff"             "no_ff"
+	gitflow_override_flag_boolean "feature.finish.fetch" "fetch"
+	gitflow_override_flag_boolean "feature.finish.rebase" "rebase"
+	gitflow_override_flag_boolean "feature.finish.preserve-merges" "preserve_merges"
+	gitflow_override_flag_boolean "feature.finish.push" "push"
+	gitflow_override_flag_boolean "feature.finish.keep" "keep"
+	gitflow_override_flag_boolean "feature.finish.keepremote" "keepremote"
+	gitflow_override_flag_boolean "feature.finish.keeplocal" "keeplocal"
+	gitflow_override_flag_boolean "feature.finish.force-delete" "force_delete"
+	gitflow_override_flag_boolean "feature.finish.squash" "squash"
+	gitflow_override_flag_boolean "feature.finish.squash-info" "squash_info"
+	gitflow_override_flag_boolean "feature.finish.no-ff" "no_ff"
 
 	# Parse arguments
 	parse_args "$@"
@@ -359,7 +361,7 @@ no-ff!                 Never fast-forward during the merge
 
 	# Check if the local branches have all the commits from the remote branches
 	if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
-			require_branches_equal "$BRANCH" "$ORIGIN/$BRANCH"
+		require_branches_equal "$BRANCH" "$ORIGIN/$BRANCH"
 	fi
 	if git_remote_branch_exists "$ORIGIN/$BASE_BRANCH"; then
 		require_branches_equal "$BASE_BRANCH" "$ORIGIN/$BASE_BRANCH"
@@ -400,7 +402,7 @@ no-ff!                 Never fast-forward during the merge
 		fi
 	else
 		git_do merge --squash "$BRANCH"
-		flag squash_info && gitflow_create_squash_message "Merged feature branch '$BRANCH'" "$BASE_BRANCH" "$BRANCH" > "$DOT_GIT_DIR/SQUASH_MSG"
+		flag squash_info && gitflow_create_squash_message "Merged feature branch '$BRANCH'" "$BASE_BRANCH" "$BRANCH" >"$DOT_GIT_DIR/SQUASH_MSG"
 		git_do commit
 	fi
 
@@ -409,7 +411,7 @@ no-ff!                 Never fast-forward during the merge
 		# Write the given $BASE_BRANCH to a temporary file as we will
 		# be needing it later.
 		mkdir -p "$DOT_GIT_DIR/.gitflow"
-		echo "$BASE_BRANCH" > "$DOT_GIT_DIR/.gitflow/MERGE_BASE"
+		echo "$BASE_BRANCH" >"$DOT_GIT_DIR/.gitflow/MERGE_BASE"
 		echo
 		echo "There were merge conflicts. To resolve the merge conflict manually, use:"
 		echo "    git mergetool"
@@ -426,6 +428,36 @@ no-ff!                 Never fast-forward during the merge
 	# When no merge conflict is detected, just clean up the feature branch
 	gitflow_config_remove_base_branch "$BRANCH"
 	helper_finish_cleanup
+}
+
+cmd_release() {
+	OPTIONS_SPEC="\
+git flow feature release [-h]
+
+Create a release based on current feature
+--
+h,help!                Show this help
+"
+
+	# 1) pull dev from origin
+	# git_do checkout "$BRANCH"
+	# git_do (or somth exists alredy here?)
+
+	# Parse arguments
+	parse_args "$@"
+
+	# Use current branch if no name is given
+	if [ "$NAME" = "" ]; then
+		gitflow_use_current_branch_name
+	fi
+
+	# 2) Update feature with dev
+	echo "Rebasing $BASE_BRANCH to $BRANCH"
+	git_do flow feature rebase || die "Could not rebase $BRANCH which is based on $BASE_BRANCH"
+
+	# 3) create release
+	git_do flow release start $NAME $BRANCH
+
 }
 
 helper_finish_cleanup() {
@@ -445,7 +477,7 @@ helper_finish_cleanup() {
 	if noflag keep; then
 
 		# Always delete remote first
-		if noflag keepremote;then
+		if noflag keepremote; then
 			if git_remote_branch_exists "$ORIGIN/$BRANCH"; then
 				git_remote_branch_delete "$BRANCH" && remotebranchdeleted=$FLAGS_TRUE
 			fi
@@ -516,7 +548,6 @@ showcommands!    Show git commands while executing them
 	if [ "$NAME" = "" ]; then
 		gitflow_use_current_branch_name
 	fi
-
 
 	# Sanity checks
 	require_clean_working_tree
@@ -616,7 +647,7 @@ showcommands!    Show git commands while executing them
 	NAME=$(gitflow_resolve_nameprefix "$NAME" "$PREFIX")
 	if [ $? -eq 0 ]; then
 		BRANCH=$PREFIX$NAME
-		git_do checkout "$BRANCH"  || die "Could not check out branch '$BRANCH'."
+		git_do checkout "$BRANCH" || die "Could not check out branch '$BRANCH'."
 	fi
 }
 
@@ -643,8 +674,8 @@ p,[no]preserve-merges  Preserve merges
 	DEFINE_boolean 'preserve-merges' false 'try to recreate merges' p
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "feature.rebase.interactive"       "interactive"
-	gitflow_override_flag_boolean   "feature.rebase.preserve-merges"   "preserve_merges"
+	gitflow_override_flag_boolean "feature.rebase.interactive" "interactive"
+	gitflow_override_flag_boolean "feature.rebase.preserve-merges" "preserve_merges"
 
 	# Parse arguments
 	parse_args "$@"
@@ -653,7 +684,6 @@ p,[no]preserve-merges  Preserve merges
 	if [ "$NAME" = "" ]; then
 		gitflow_use_current_branch_name
 	fi
-
 
 	BASE_BRANCH=$(gitflow_config_get_base_branch $BRANCH)
 	BASE_BRANCH=${BASE_BRANCH:-$DEVELOP_BRANCH}
@@ -667,7 +697,7 @@ p,[no]preserve-merges  Preserve merges
 
 	git_local_branch_exists "$BASE_BRANCH" || die "The base '$BASE_BRANCH' doesn't exists locally or is not a branch. Can't rebase the feature branch '$BRANCH'."
 
-	git_do checkout -q "$BRANCH"  || die "Could not check out branch '$BRANCH'."
+	git_do checkout -q "$BRANCH" || die "Could not check out branch '$BRANCH'."
 	if flag interactive; then
 		opts="$opts -i"
 	fi
@@ -749,7 +779,7 @@ showcommands!    Show git commands while executing them
 		echo "Pulled $REMOTE's changes into $BRANCH."
 	else
 		# Setup the local branch clone for the first time
-		git_do fetch -q "$REMOTE" "$BRANCH" ||  die "Could not fetch branch '$BRANCH' from remote '$REMOTE'."     # Stores in FETCH_HEAD
+		git_do fetch -q "$REMOTE" "$BRANCH" || die "Could not fetch branch '$BRANCH' from remote '$REMOTE'." # Stores in FETCH_HEAD
 		git_do branch --no-track "$BRANCH" FETCH_HEAD || die "Branch failed."
 		git_do checkout -q "$BRANCH" || die "Could not check out branch '$BRANCH'."
 		echo "Created local branch $BRANCH based on $REMOTE's $BRANCH."
@@ -776,8 +806,8 @@ r,[no]remote     Delete remote branch
 	DEFINE_boolean 'remote' false "delete remote branch" r
 
 	# Override defaults with values from config
-	gitflow_override_flag_boolean   "feature.delete.force"    "force"
-	gitflow_override_flag_boolean   "feature.delete.remote"   "remote"
+	gitflow_override_flag_boolean "feature.delete.force" "force"
+	gitflow_override_flag_boolean "feature.delete.remote" "remote"
 
 	# Parse arguments
 	parse_args "$@"
@@ -832,7 +862,7 @@ r,[no]remote     Delete remote branch
 
 cmd_rename() {
 	OPTIONS_SPEC="\
-git flow feature rename <new_name> [<new_name>]
+git flow feature rename [<old_name>] <new_name>
 
 Rename a given feature branch
 --

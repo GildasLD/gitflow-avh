@@ -19,16 +19,16 @@ usage() {
 }
 
 # Does this need to be smarter for each host OS?
-if [ -z "$PREFIX" ] ; then
+if [ -z "$PREFIX" ]; then
 	PREFIX="/usr/local"
 fi
 
-if [ -z "$REPO_NAME" ] ; then
+if [ -z "$REPO_NAME" ]; then
 	REPO_NAME="gitflow"
 fi
 
-if [ -z "$REPO_HOME" ] ; then
-	REPO_HOME="https://github.com/petervanderdoes/gitflow-avh.git"
+if [ -z "$REPO_HOME" ]; then
+	REPO_HOME="git@github.com:GildasLD/gitflow-avh.git"
 fi
 
 EXEC_PREFIX="$PREFIX"
@@ -40,14 +40,13 @@ EXEC_FILES="git-flow"
 SCRIPT_FILES="git-flow-init git-flow-feature git-flow-bugfix git-flow-hotfix git-flow-release git-flow-support git-flow-version gitflow-common gitflow-shFlags git-flow-config"
 HOOK_FILES="$REPO_NAME/hooks/*"
 
-
 echo "### git-flow no-make installer ###"
 
 case "$1" in
 uninstall)
 	echo "Uninstalling git-flow from $PREFIX"
-	if [ -d "$BINDIR" ] ; then
-		for script_file in $SCRIPT_FILES $EXEC_FILES ; do
+	if [ -d "$BINDIR" ]; then
+		for script_file in $SCRIPT_FILES $EXEC_FILES; do
 			echo "rm -vf $BINDIR/$script_file"
 			rm -vf "$BINDIR/$script_file"
 		done
@@ -67,7 +66,7 @@ install)
 		exit
 	fi
 	echo "Installing git-flow to $BINDIR"
-	if [ -d "$REPO_NAME" -a -d "$REPO_NAME/.git" ] ; then
+	if [ -d "$REPO_NAME" -a -d "$REPO_NAME/.git" ]; then
 		echo "Using existing repo: $REPO_NAME"
 	else
 		echo "Cloning repo from GitHub to $REPO_NAME"
@@ -91,7 +90,7 @@ install)
 		cd "$REPO_NAME"
 		git checkout tags/$3
 		cd "$OLDPWD"
-		;;		
+		;;
 	*)
 		usage
 		exit
@@ -99,14 +98,14 @@ install)
 	esac
 	install -v -d -m 0755 "$PREFIX/bin"
 	install -v -d -m 0755 "$DOCDIR/hooks"
-	for exec_file in $EXEC_FILES ; do
+	for exec_file in $EXEC_FILES; do
 		install -v -m 0755 "$REPO_NAME/$exec_file" "$BINDIR"
 	done
-	for script_file in $SCRIPT_FILES ; do
+	for script_file in $SCRIPT_FILES; do
 		install -v -m 0644 "$REPO_NAME/$script_file" "$BINDIR"
 	done
-	for hook_file in $HOOK_FILES ; do
-		install -v -m 0644 "$hook_file"  "$DOCDIR/hooks"
+	for hook_file in $HOOK_FILES; do
+		install -v -m 0644 "$hook_file" "$DOCDIR/hooks"
 	done
 	exit
 	;;
