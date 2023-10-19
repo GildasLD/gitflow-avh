@@ -8,7 +8,7 @@
 #    http://blog.avirtualhome.com/development-workflow-using-git/
 #
 # Feel free to contribute to this project at:
-#    http://github.com/petervanderdoes/gitflow
+#    http://github.com/GildasLD/gitflow
 #
 # Authors:
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
@@ -502,19 +502,15 @@ v,verbose!        verbose (more) output
 		else
 			printf "  "
 		fi
-		if flag verbose; then
-			base=$(git merge-base "$branch" "$DEVELOP_BRANCH")
-			develop_sha=$(git rev-parse "$DEVELOP_BRANCH")
-			branch_sha=$(git rev-parse "$branch")
-			printf "%-${width}s" "${branch#$PREFIX}"
-			if [ "$branch_sha" = "$develop_sha" ]; then
-				printf "(no commits yet)"
-			else
-				nicename=$(git rev-parse --short "$base")
-				printf "(based on $nicename)"
-			fi
+		base=$(git merge-base "$branch" "$DEVELOP_BRANCH")
+		develop_sha=$(git rev-parse "$DEVELOP_BRANCH")
+		branch_sha=$(git rev-parse "$branch")
+		printf "%-${width}s" "${branch#$PREFIX}"
+		if [ "$branch_sha" = "$develop_sha" ]; then
+			printf "(no commits yet)"
 		else
-			printf "%s" "${branch#$PREFIX}"
+			nicename=$(git rev-parse --short "$base")
+			printf "(based on $nicename)"
 		fi
 		echo
 	done

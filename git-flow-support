@@ -8,7 +8,7 @@
 #    http://blog.avirtualhome.com/development-workflow-using-git/
 #
 # Feel free to contribute to this project at:
-#    http://github.com/petervanderdoes/gitflow
+#    http://github.com/GildasLD/gitflow
 #
 # Authors:
 # Copyright 2012-2019 Peter van der Does. All rights reserved.
@@ -109,24 +109,20 @@ v,verbose         Verbose (more) output
 		else
 			printf "  "
 		fi
-		if flag verbose; then
-			base=$(git merge-base "$branch" "$MASTER_BRANCH")
-			master_sha=$(git rev-parse "$MASTER_BRANCH")
-			branch_sha=$(git rev-parse "$branch")
-			printf "%-${width}s" "${branch#$PREFIX}"
-			if [ "$branch_sha" = "$master_sha" ]; then
-				printf "(no commits yet)"
-			else
-				tagname=$(git name-rev --tags --no-undefined --name-only "$base")
-				if [ "$tagname" != "" ]; then
-					nicename=$tagname
-				else
-					nicename=$(git rev-parse --short "$base")
-				fi
-				printf "(based on $nicename)"
-			fi
+		base=$(git merge-base "$branch" "$MASTER_BRANCH")
+		master_sha=$(git rev-parse "$MASTER_BRANCH")
+		branch_sha=$(git rev-parse "$branch")
+		printf "%-${width}s" "${branch#$PREFIX}"
+		if [ "$branch_sha" = "$master_sha" ]; then
+			printf "(no commits yet)"
 		else
-			printf "%s" "${branch#$PREFIX}"
+			tagname=$(git name-rev --tags --no-undefined --name-only "$base")
+			if [ "$tagname" != "" ]; then
+				nicename=$tagname
+			else
+				nicename=$(git rev-parse --short "$base")
+			fi
+			printf "(based on $nicename)"
 		fi
 		echo
 	done

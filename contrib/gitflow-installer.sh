@@ -1,14 +1,5 @@
 #!/bin/bash
 
-# git-flow make-less installer for *nix systems, by Rick Osborne
-# Based on the git-flow core Makefile:
-# http://github.com/petervanderdoes/gitflow-avh/blob/master/Makefile
-
-# Licensed under the same restrictions as git-flow:
-# http://github.com/petervanderdoes/gitflow-avh/blob/develop/LICENSE
-
-# Updated for the fork at petervanderdoes
-
 usage() {
 	echo "Usage: [environment] gitflow-installer.sh [install|uninstall] [stable|develop|version] [tag]"
 	echo "Environment:"
@@ -24,11 +15,7 @@ if [ -z "$PREFIX" ]; then
 fi
 
 if [ -z "$REPO_NAME" ]; then
-	REPO_NAME="gitflow"
-fi
-
-if [ -z "$REPO_HOME" ]; then
-	REPO_HOME="git@github.com:GildasLD/gitflow-avh.git"
+	REPO_NAME="."
 fi
 
 EXEC_PREFIX="$PREFIX"
@@ -66,36 +53,6 @@ install)
 		exit
 	fi
 	echo "Installing git-flow to $BINDIR"
-	if [ -d "$REPO_NAME" -a -d "$REPO_NAME/.git" ]; then
-		echo "Using existing repo: $REPO_NAME"
-	else
-		echo "Cloning repo from GitHub to $REPO_NAME"
-		git clone "$REPO_HOME" "$REPO_NAME"
-	fi
-	cd "$REPO_NAME"
-	git pull
-	cd "$OLDPWD"
-	case "$2" in
-	stable)
-		cd "$REPO_NAME"
-		git checkout master
-		cd "$OLDPWD"
-		;;
-	develop)
-		cd "$REPO_NAME"
-		git checkout develop
-		cd "$OLDPWD"
-		;;
-	version)
-		cd "$REPO_NAME"
-		git checkout tags/$3
-		cd "$OLDPWD"
-		;;
-	*)
-		usage
-		exit
-		;;
-	esac
 	install -v -d -m 0755 "$PREFIX/bin"
 	install -v -d -m 0755 "$DOCDIR/hooks"
 	for exec_file in $EXEC_FILES; do
