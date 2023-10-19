@@ -144,7 +144,7 @@ file=    use given config file
 	# Add a master branch if no such branch exists yet
 
 	if gitflow_has_master_configured && ! flag force; then
-		master_branch=$(git config --get gitflow.branch.master)
+		master_branch=$(git config --get gitflow.branch.main)
 	else
 		# Two cases are distinguished:
 		# 1. A fresh git repo (without any branches)
@@ -156,7 +156,7 @@ file=    use given config file
 		if [ "$branch_count" -eq 0 ]; then
 			echo "No branches exist yet. Base branches must be created now."
 			should_check_existence=NO
-			default_suggestion=$(git config --get gitflow.branch.master || echo master)
+			default_suggestion=$(git config --get gitflow.branch.main || echo main)
 		else
 			echo
 			echo "Which branch should be used for bringing forth production releases?"
@@ -164,7 +164,7 @@ file=    use given config file
 
 			should_check_existence=YES
 			default_suggestion=
-			for guess in $(git config --get gitflow.branch.master) 'production' 'main' 'master'; do
+			for guess in $(git config --get gitflow.branch.main) 'production' 'main' 'master'; do
 				if git_local_branch_exists "$guess"; then
 					default_suggestion="$guess"
 					break
@@ -175,7 +175,7 @@ file=    use given config file
 
 		if [ -z $default_suggestion ] && flag defaults; then
 				should_check_existence=YES
-				default_suggestion=$(git config --get gitflow.branch.master || echo master)
+				default_suggestion=$(git config --get gitflow.branch.main || echo main)
 		fi
 
 		printf "Branch name for production releases: [$default_suggestion] "
@@ -198,7 +198,7 @@ file=    use given config file
 		fi
 
 		# Store the name of the master branch
-		git_do config $gitflow_config_option gitflow.branch.master "$master_branch"
+		git_do config $gitflow_config_option gitflow.branch.main "$master_branch"
 	fi
 
 	# Add a develop branch if no such branch exists yet
@@ -388,7 +388,7 @@ file=    use given config file
 		[ "$answer" = "-" ] && prefix= || prefix=${answer:-$default_suggestion}
 		git_do config $gitflow_config_option gitflow.prefix.support "$prefix"
 	fi
-	
+
 	# Version tag prefix
 	if ! git config --get gitflow.prefix.versiontag >/dev/null 2>&1 || flag force; then
 	    if [ "$FLAGS_tag" != "" ]; then
