@@ -2,12 +2,12 @@
 
 # git-flow make-less installer for *nix systems, by Rick Osborne
 # Based on the git-flow core Makefile:
-# http://github.com/petervanderdoes/gitflow-avh/blob/master/Makefile
+# http://github.com/GildasLD/gitflow-avh/blob/master/Makefile
 
 # Licensed under the same restrictions as git-flow:
-# http://github.com/petervanderdoes/gitflow-avh/blob/develop/LICENSE
+# http://github.com/GildasLD/gitflow-avh/blob/develop/LICENSE
 
-# Updated for the fork at petervanderdoes
+# Updated for the fork at GildasLD
 
 usage() {
 	echo "Usage: [environment] gitflow-installer.sh [install|uninstall] [stable|develop|version] [tag]"
